@@ -1,6 +1,5 @@
 import dotenv from 'dotenv';
 import TelegramBot from 'node-telegram-bot-api';
-import axios from 'axios';
 
 dotenv.config();
 
@@ -24,13 +23,26 @@ bot.onText(/\/completar\s+(\S+)/, async (msg, match) => {
     return bot.sendMessage(chatId, 'Configura BACKEND_URL y BOT_API_KEY en el .env.');
   }
   try {
-    const r = await axios.post(`${BACKEND_URL}/api/bot/order-update`, {
-      api_key: BOT_API_KEY,
-      order_id: orderId,
-      status: 'completed'
+    const resp = await fetch(`${BACKEND_URL}/api/bot/order-update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: BOT_API_KEY,
+        order_id: orderId,
+        status: 'completed'
+      })
     });
-    bot.sendMessage(chatId, `Orden ${orderId} actualizada a COMPLETED. Estado actual: ${r.data.status}`);
+    if (!resp.ok) {
+      let errMsg = `HTTP ${resp.status}`;
+      try {
+        const err = await resp.json();
+        if (err && err.error) errMsg = err.error;
+      } catch {}
+      throw new Error(errMsg);
+    }
+    const data = await resp.json();
+    bot.sendMessage(chatId, `Orden ${orderId} actualizada a COMPLETED. Estado actual: ${data.status}`);
   } catch (e) {
-    bot.sendMessage(chatId, `Error al completar orden ${orderId}: ${e.response?.data?.error || e.message}`);
+    bot.sendMessage(chatId, `Error al completar orden ${orderId}: ${e.message}`);
   }
 });
