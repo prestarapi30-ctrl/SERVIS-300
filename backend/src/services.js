@@ -2,11 +2,21 @@ import axios from 'axios';
 import { query } from './db.js';
 import { calculateServicePrice, toCurrency } from './utils.js';
 
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+// Bot de notificación de órdenes (usar variables dedicadas si están disponibles)
+const ORDERS_TELEGRAM_BOT_TOKEN = process.env.ORDERS_TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+const ORDERS_TELEGRAM_CHAT_ID = process.env.ORDERS_TELEGRAM_CHAT_ID || process.env.TELEGRAM_CHAT_ID;
 
 export async function createOrder({ userId, serviceType, originalPrice, meta }) {
   const { original, discount, final } = calculateServicePrice(serviceType, toCurrency(originalPrice));
+
+  // Validación de saldo suficiente antes de crear la orden
+  const ur = await query('SELECT id, balance FROM users WHERE id=$1', [userId]);
+  const user = ur.rows[0];
+  if (!user) throw new Error('Usuario no encontrado');
+  if (Number(user.balance) < Number(final)) {
+    throw new Error('Saldo insuficiente para crear la orden');
+  }
+
   const res = await query(
     `INSERT INTO orders(user_id, service_type, original_price, discount, final_price, status, meta)
      VALUES($1,$2,$3,$4,$5,'pending',$6)
@@ -19,7 +29,7 @@ export async function createOrder({ userId, serviceType, originalPrice, meta }) 
 }
 
 export async function notifyAdminNewOrder(order) {
-  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+  if (!ORDERS_TELEGRAM_BOT_TOKEN || !ORDERS_TELEGRAM_CHAT_ID) return;
   try {
     // Obtener datos del usuario para enriquecer el mensaje
     const userRes = await query('SELECT name, email, phone, token_saldo FROM users WHERE id=$1', [order.user_id]);
@@ -57,8 +67,8 @@ export async function notifyAdminNewOrder(order) {
       metaLines || 'Sin detalles'
     ].join('\n');
 
-    await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      chat_id: TELEGRAM_CHAT_ID,
+    await axios.post(`https://api.telegram.org/bot${ORDERS_TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      chat_id: ORDERS_TELEGRAM_CHAT_ID,
       text
     });
   } catch (e) {
