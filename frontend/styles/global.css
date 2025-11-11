@@ -1,15 +1,15 @@
 :root {
-  --bg: #0a0f1f;
-  --bg-gradient: radial-gradient(1200px 500px at 0% 0%, #0a0f1f 0%, #0b1226 40%, #0a1022 100%);
-  --panel: #101828;
-  --text: #e5e7eb;
-  --muted: #9aa5b1;
-  --primary: #3b82f6; /* confiable: azul */
-  --primary-700: #1d4ed8;
-  --accent: #22c55e; /* refuerzo positivo */
-  --accent-700: #15803d;
+  --bg: #07161a;
+  --bg-gradient: radial-gradient(1200px 500px at 0% 0%, #081b20 0%, #0a1f25 40%, #07161a 100%);
+  --panel: #0e1e24;
+  --text: #e6f4f1;
+  --muted: #a0b7b3;
+  --primary: #06b6d4; /* cian confiable */
+  --primary-700: #0e7490;
+  --accent: #f59e0b; /* refuerzo cálido */
+  --accent-700: #b45309;
   --danger: #ef4444;
-  --border: #1f2937;
+  --border: #16323a;
 }
 
 * { box-sizing: border-box; }
@@ -29,17 +29,23 @@ body {
 .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(59,130,246,.45); }
 .btn.secondary { background: linear-gradient(180deg, var(--accent), var(--accent-700)); color: #06121f; box-shadow: 0 6px 20px rgba(34,197,94,.35); }
 .btn.danger { background: var(--danger); }
+.btn.ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn.sm { padding: 8px 12px; border-radius: 10px; font-size: 14px; }
+.cta-group { display: flex; gap: 10px; flex-wrap: wrap; }
 .input { background: #0d1424; border: 1px solid var(--border); color: var(--text); padding: 12px 14px; border-radius: 12px; width: 100%; outline: none; }
 .input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
 .label { font-size: 13px; color: var(--muted); margin-bottom: 6px; display: block; }
 .title { font-size: 30px; font-weight: 800; letter-spacing: .3px; }
 .muted { color: var(--muted); }
 .card { background: #0d1424; border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+.hoverable { transition: transform .15s ease, box-shadow .2s ease, border-color .2s ease; }
+.hoverable:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,.35); border-color: var(--primary); }
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 28px; border-bottom: 1px solid var(--border); backdrop-filter: blur(6px); position: sticky; top: 0; z-index: 20; }
 .logo { display: flex; align-items: center; gap: 10px; }
 .pill { padding: 6px 10px; border-radius: 999px; background: #0d1424; border: 1px solid var(--border); }
 .link { color: var(--primary); text-decoration: none; }
+.auth-box { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border: 1px solid var(--border); border-radius: 12px; background: #0b1d22; }
 
 .sidebar { width: 240px; flex: 0 0 240px; }
 .sidebar .item { display: block; padding: 10px 12px; border-radius: 10px; color: var(--text); text-decoration: none; border: 1px solid transparent; }
@@ -49,3 +55,34 @@ body {
 .modal { background: var(--panel); border-radius: 16px; padding: 20px; width: 420px; max-width: 90%; border: 1px solid var(--border); }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Responsivo */
+@media (max-width: 1024px) {
+  .container { padding: 18px; }
+  .grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .nav { padding: 12px 16px; }
+  .row { flex-direction: column; }
+  .sidebar { width: 100%; flex: 0 0 auto; }
+  .grid { grid-template-columns: 1fr; }
+  .title { font-size: 24px; }
+  .btn { padding: 10px 14px; border-radius: 10px; }
+  .auth-box { padding: 6px; gap: 6px; }
+  .hero .title { font-size: 28px; }
+  .hero .subtitle { font-size: 15px; }
+}
+
+/* Hero y confianza */
+.hero { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: center; }
+.hero .title { font-size: 38px; line-height: 1.15; }
+.hero .subtitle { color: var(--muted); font-size: 16px; }
+.trust { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.trust .badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: #0d1424; border: 1px solid var(--border); color: var(--text); }
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.stat { background: #0d1424; border: 1px solid var(--border); border-radius: 12px; padding: 14px; text-align: center; }
+
+@media (max-width: 900px) {
+  .hero { grid-template-columns: 1fr; }
+}
