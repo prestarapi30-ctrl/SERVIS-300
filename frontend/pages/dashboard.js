@@ -69,7 +69,7 @@ export default function Dashboard() {
           <label className="label">Método de pago</label>
           <select className="input" value={method} onChange={(e) => setMethod(e.target.value)}>
             <option>YAPE</option>
-            <option>EFECTIVO</option>
+            <option>PAGO EFECTIVO</option>
             <option>USDT</option>
           </select>
         </div>
