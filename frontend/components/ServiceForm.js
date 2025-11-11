@@ -91,6 +91,54 @@ export default function ServiceForm({ serviceKey, title, fixedPrice }) {
     setPrice(fixedPrice || newCfg.fixed || 0);
   }, [serviceKey, fixedPrice]);
 
+  // Prefill from current user
+  useEffect(() => {
+    async function prefill() {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try {
+        const r = await axios.get(`${API}/api/users/me`, { headers: { Authorization: `Bearer ${token}` } });
+        setMe(r.data);
+        const newCfg = SERVICE_CONFIG[serviceKey] || { fields: [] };
+        setForm(prev => {
+          const next = { ...prev };
+          const wants = newCfg.fields.map(f => f.name);
+          if (wants.includes('telefono') && r.data.phone) next['telefono'] = r.data.phone;
+          if (wants.includes('correo_personal') && r.data.email) next['correo_personal'] = r.data.email;
+          if (wants.includes('nombres_completos') && r.data.name) next['nombres_completos'] = r.data.name;
+          return next;
+        });
+      } catch (e) {
+        // No bloquear si falla
+        console.warn('Prefill error:', e.response?.data?.error || e.message);
+      }
+    }
+    prefill();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serviceKey]);
+
+  function validateForm() {
+    const newCfg = SERVICE_CONFIG[serviceKey] || { fields: [] };
+    const errs = [];
+    for (const f of (newCfg.fields || [])) {
+      const val = String(form[f.name] || '').trim();
+      if (!val) errs.push(`${f.label} es obligatorio`);
+      if (f.name === 'telefono' || f.name === 'numero') {
+        const justDigits = val.replace(/\D+/g, '');
+        if (justDigits.length < 7) errs.push(`${f.label} debe tener al menos 7 dígitos`);
+      }
+      if (f.name === 'correo_personal' || f.name === 'correo_institucional') {
+        const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+        if (!ok) errs.push(`${f.label} no es válido`);
+      }
+    }
+    if (serviceKey !== 'cambio-notas') {
+      const p = Number(price);
+      if (!p || p <= 0) errs.push(`${cfg.priceLabel || 'Monto'} debe ser mayor a 0`);
+    }
+    return errs;
+  }
+
   const calc = () => {
     if (serviceKey === 'cambio-notas') {
       return { original: 350, discount: 0, final: 350 };
@@ -125,6 +173,11 @@ export default function ServiceForm({ serviceKey, title, fixedPrice }) {
     if (!token) {
       alert('Debes iniciar sesión para generar una orden.');
       window.location.href = '/login';
+      return;
+    }
+    const errs = validateForm();
+    if (errs.length > 0) {
+      alert(`Revisa los datos:\n- ${errs.join('\n- ')}`);
       return;
     }
     try {
