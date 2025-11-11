@@ -92,10 +92,11 @@ function getUserChatIdByToken(token) {
   return entry ? entry[0] : null;
 }
 
-// Estado de espera: QR del admin para un token
-const adminPendingQR = new Map(); // key: adminChatId, value: { token }
+// Estado de espera: medio (QR) del admin para un token, con tipo
+const adminPendingQR = new Map(); // key: adminChatId, value: { token, kind }
 
 // Comando admin: /QR <token> (el admin enviará la foto del QR inmediatamente después)
+// Comando admin: /QR <token> (genérico; se usa para YAPE por defecto)
 bot.onText(/\/QR\s+(\S+)/i, async (msg, match) => {
   const chatId = msg.chat.id;
   if (String(chatId) !== String(ADMIN_CHAT)) {
@@ -106,7 +107,7 @@ bot.onText(/\/QR\s+(\S+)/i, async (msg, match) => {
   if (!userChatId) {
     return bot.sendMessage(chatId, 'No encuentro al usuario activo para ese token. Asegúrate que haya confirmado la recarga.');
   }
-  adminPendingQR.set(chatId, { token });
+  adminPendingQR.set(chatId, { token, kind: 'GENERIC_QR' });
   bot.sendMessage(chatId, 'Ok. Envía ahora el QR como foto (no documento).');
 });
 
@@ -124,7 +125,8 @@ bot.onText(/\/NU\s+(\S+)\s+(\S+)/i, async (msg, match) => {
   }
   const s = sessions.get(userChatId);
   const amountTxt = s?.amount ? `S/ ${s.amount}` : '';
-  await bot.sendMessage(userChatId, `Medio de pago: Número ${numero}. Envía ${amountTxt} y adjunta tu comprobante.`);
+  const methodTxt = s?.method ? ` (${s.method})` : '';
+  await bot.sendMessage(userChatId, `Medio de pago${methodTxt}: Número ${numero}. Envía ${amountTxt} y adjunta tu comprobante.`);
   if (s) sessions.set(userChatId, { ...s, status: 'awaiting_receipt' });
   bot.sendMessage(chatId, 'Número enviado al usuario.');
 });
@@ -143,7 +145,12 @@ bot.on('photo', async (msg) => {
     const s = sessions.get(userChatId);
     const photo = msg.photo[msg.photo.length - 1];
     const fileId = photo.file_id;
-    const caption = s?.amount ? `Medio de pago: QR. Envía S/ ${s.amount} y adjunta tu comprobante.` : 'Medio de pago: QR. Adjunta tu comprobante tras pagar.';
+    const methodTxt = s?.method ? ` (${s.method})` : '';
+    let captionBase = 'Medio de pago';
+    if (pending.kind === 'EFECTIVO_QR') captionBase = 'Medio de pago: QR Pago Efectivo';
+    else if (pending.kind === 'USDT_QR') captionBase = 'Medio de pago: QR USDT';
+    else captionBase = `Medio de pago${methodTxt}: QR`;
+    const caption = s?.amount ? `${captionBase}. Envía S/ ${s.amount} y adjunta tu comprobante.` : `${captionBase}. Adjunta tu comprobante tras pagar.`;
     await bot.sendPhoto(userChatId, fileId, { caption });
     if (s) sessions.set(userChatId, { ...s, status: 'awaiting_receipt' });
     adminPendingQR.delete(msg.chat.id);
@@ -171,6 +178,85 @@ bot.on('message', async (msg) => {
     await bot.sendMessage(userChatId, `Medio de pago: ${msg.text}\nAdjunta tu comprobante cuando realices el pago.`);
   }
   sessions.set(userChatId, { ...s, status: 'awaiting_receipt' });
+});
+
+// =====================
+// PAGO EFECTIVO comandos
+// =====================
+// /CO <token> <codigo> — Enviar código e instrucciones de Pago Efectivo
+bot.onText(/\/CO\s+(\S+)\s+(\S+)/i, async (msg, match) => {
+  const chatId = msg.chat.id;
+  if (String(chatId) !== String(ADMIN_CHAT)) {
+    return bot.sendMessage(chatId, 'Este comando es solo para admin.');
+  }
+  const token = match[1];
+  const codigo = match[2];
+  const userChatId = getUserChatIdByToken(token);
+  if (!userChatId) {
+    return bot.sendMessage(chatId, 'No encuentro al usuario activo para ese token.');
+  }
+  const s = sessions.get(userChatId);
+  const amountTxt = s?.amount ? `S/ ${s.amount}` : '';
+  await bot.sendMessage(userChatId,
+    `Pago Efectivo — Código: ${codigo}\n\n` +
+    `1) Ir a un agente y decir que deseas PAGO EFECTIVO, indicar cantidad ${amountTxt} y brindar el código.\n` +
+    `2) Copiar el código, ir a tu banca/billetera móvil, entrar a "Pagar servicios", buscar "Pago Efectivo Soles", pegar el código y pagar.\n\n` +
+    `Tras pagar, adjunta tu comprobante aquí.`
+  );
+  if (s) sessions.set(userChatId, { ...s, status: 'awaiting_receipt' });
+  bot.sendMessage(chatId, 'Código y pasos enviados al usuario.');
+});
+
+// /KR <token> — El admin enviará un QR de Pago Efectivo
+bot.onText(/\/KR\s+(\S+)/i, async (msg, match) => {
+  const chatId = msg.chat.id;
+  if (String(chatId) !== String(ADMIN_CHAT)) {
+    return bot.sendMessage(chatId, 'Este comando es solo para admin.');
+  }
+  const token = match[1];
+  const userChatId = getUserChatIdByToken(token);
+  if (!userChatId) {
+    return bot.sendMessage(chatId, 'No encuentro al usuario activo para ese token.');
+  }
+  adminPendingQR.set(chatId, { token, kind: 'EFECTIVO_QR' });
+  bot.sendMessage(chatId, 'Ok. Envía ahora el QR de Pago Efectivo como foto (no documento).');
+});
+
+// =====================
+// USDT comandos
+// =====================
+// /Wa <token> <wallet> — Enviar wallet USDT (texto)
+bot.onText(/\/Wa\s+(\S+)\s+(.+)/i, async (msg, match) => {
+  const chatId = msg.chat.id;
+  if (String(chatId) !== String(ADMIN_CHAT)) {
+    return bot.sendMessage(chatId, 'Este comando es solo para admin.');
+  }
+  const token = match[1];
+  const wallet = match[2];
+  const userChatId = getUserChatIdByToken(token);
+  if (!userChatId) {
+    return bot.sendMessage(chatId, 'No encuentro al usuario activo para ese token.');
+  }
+  const s = sessions.get(userChatId);
+  const amountTxt = s?.amount ? `S/ ${s.amount}` : '';
+  await bot.sendMessage(userChatId, `Medio de pago (USDT): Wallet ${wallet}. Envía ${amountTxt} equivalente y adjunta tu comprobante.`);
+  if (s) sessions.set(userChatId, { ...s, status: 'awaiting_receipt' });
+  bot.sendMessage(chatId, 'Wallet USDT enviada al usuario.');
+});
+
+// /QRU <token> — El admin enviará un QR de USDT
+bot.onText(/\/QRU\s+(\S+)/i, async (msg, match) => {
+  const chatId = msg.chat.id;
+  if (String(chatId) !== String(ADMIN_CHAT)) {
+    return bot.sendMessage(chatId, 'Este comando es solo para admin.');
+  }
+  const token = match[1];
+  const userChatId = getUserChatIdByToken(token);
+  if (!userChatId) {
+    return bot.sendMessage(chatId, 'No encuentro al usuario activo para ese token.');
+  }
+  adminPendingQR.set(chatId, { token, kind: 'USDT_QR' });
+  bot.sendMessage(chatId, 'Ok. Envía ahora el QR de USDT como foto (no documento).');
 });
 
 // Captura de comprobante (foto)
