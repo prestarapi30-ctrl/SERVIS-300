@@ -38,7 +38,7 @@ export default function AdminPanel() {
       <div className="row">
         <div className="col">
           <div className="panel">
-            <div className="title">Usuarios</div>
+            <div className="title">Usuarios <span className="pill">Total: {users.length}</span></div>
             {users.map(u => (
               <div className="card" key={u.id} style={{ marginBottom: 10 }}>
                 <div><strong>{u.name}</strong> — {u.email}</div>
