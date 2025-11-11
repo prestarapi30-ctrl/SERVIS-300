@@ -34,7 +34,9 @@ export default function Shell({ children }) {
           <a className="link" href="/" style={{ marginRight: 12 }}>Inicio</a>
           <a className="link" href="/dashboard" style={{ marginRight: 12 }}>Dashboard</a>
           <a className="link" href="/perfil" style={{ marginRight: 12 }}>Perfil</a>
-          <a className="link" href="/admin" style={{ marginRight: 12 }}>Admin</a>
+          {!(typeof window !== 'undefined' && localStorage.getItem('token')) && (
+            <a className="link" href="/admin" style={{ marginRight: 12 }}>Admin</a>
+          )}
           <a className="btn" href="/servicios/taxi" style={{ marginRight: 12 }}>Nueva orden</a>
           {typeof window !== 'undefined' && localStorage.getItem('token') ? (
             <button className="btn secondary" onClick={() => {

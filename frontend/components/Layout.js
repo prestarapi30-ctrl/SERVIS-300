@@ -11,7 +11,9 @@ export default function Layout({ children }) {
           <a className="link" href="/" style={{ marginRight: 12 }}>Inicio</a>
           <a className="link" href="/servicios/taxi" style={{ marginRight: 12 }}>Servicios</a>
           <a className="link" href="/dashboard" style={{ marginRight: 12 }}>Dashboard</a>
-          <a className="link" href="/admin/login" style={{ marginRight: 12 }}>Admin</a>
+          {!(typeof window !== 'undefined' && localStorage.getItem('token')) && (
+            <a className="link" href="/admin/login" style={{ marginRight: 12 }}>Admin</a>
+          )}
           {typeof window !== 'undefined' && localStorage.getItem('token') ? (
             <>
               <a className="link" href="/perfil" style={{ marginRight: 12 }}>Perfil</a>
