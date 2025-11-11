@@ -52,6 +52,17 @@ CREATE TABLE IF NOT EXISTS transactions (
   created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
 );
 
+-- recharge_intents table: intents creados desde el panel para iniciar recargas vía bot
+CREATE TABLE IF NOT EXISTS recharge_intents (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_saldo TEXT NOT NULL,
+  method TEXT NOT NULL, -- YAPE | EFECTIVO | USDT
+  amount NUMERIC(12,2) NOT NULL,
+  status TEXT NOT NULL DEFAULT 'created', -- created | verified | used | expired
+  created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
 -- logs table
 CREATE TABLE IF NOT EXISTS logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -103,3 +114,5 @@ CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_token_saldo ON users(token_saldo);
+CREATE INDEX IF NOT EXISTS idx_recharge_intents_user_id ON recharge_intents(user_id);
+CREATE INDEX IF NOT EXISTS idx_recharge_intents_status ON recharge_intents(status);
