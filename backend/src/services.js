@@ -81,6 +81,7 @@ export async function notifyAdminNewOrder(order) {
 
     const text = [
       `Nueva orden`,
+      `Orden ID: ${order.id}`,
       `Usuario: ${user.name || 'N/A'}`,
       `Email: ${user.email || 'N/A'}`,
       `Token: ${user.token_saldo || 'N/A'}`,
