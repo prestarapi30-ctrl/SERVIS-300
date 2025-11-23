@@ -6,6 +6,7 @@ export default function Capturas() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   useEffect(() => {
     const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/referencias`;
@@ -37,7 +38,12 @@ export default function Capturas() {
               <div key={item.id} className="panel" style={{ padding: 12 }}>
                 <div style={{ aspectRatio: '1 / 1', overflow: 'hidden', borderRadius: 8, marginBottom: 8, background: '#f4f4f4' }}>
                   {item.image_url ? (
-                    <img src={item.image_url.startsWith('http') ? item.image_url : `${apiBase}${item.image_url.startsWith('/') ? '' : '/'}${item.image_url}`} alt={item.title || 'Captura'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img
+                      src={item.image_url.startsWith('http') ? item.image_url : `${apiBase}${item.image_url.startsWith('/') ? '' : '/'}${item.image_url}`}
+                      alt={item.title || 'Captura'}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'zoom-in' }}
+                      onClick={() => setPreviewUrl(item.image_url.startsWith('http') ? item.image_url : `${apiBase}${item.image_url.startsWith('/') ? '' : '/'}${item.image_url}`)}
+                    />
                   ) : (
                     <div className="muted" style={{ padding: 16 }}>Sin imagen</div>
                   )}
@@ -47,6 +53,14 @@ export default function Capturas() {
               </div>
             ))}
           </div>
+          {previewUrl && (
+            <div
+              onClick={() => setPreviewUrl(null)}
+              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+            >
+              <img src={previewUrl} alt="Vista previa" style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }} />
+            </div>
+          )}
         </div>
       </div>
     </Layout>
