@@ -1,10 +1,12 @@
-import Shell from '../../components/Shell';
+import Layout from '../../components/Layout';
 import ServiceForm from '../../components/ServiceForm';
 
 export default function Taxi() {
   return (
-    <Shell>
-      <ServiceForm serviceKey="taxi" title="Taxi" />
-    </Shell>
+    <Layout>
+      <div className="section">
+        <ServiceForm serviceKey="taxi" title="Taxi" />
+      </div>
+    </Layout>
   );
 }

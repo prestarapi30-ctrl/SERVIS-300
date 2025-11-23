@@ -1,10 +1,12 @@
-import Shell from '../../components/Shell';
+import Layout from '../../components/Layout';
 import ServiceForm from '../../components/ServiceForm';
 
 export default function PagoLuz() {
   return (
-    <Shell>
-      <ServiceForm serviceKey="pago-luz" title="Pago Luz" />
-    </Shell>
+    <Layout>
+      <div className="section">
+        <ServiceForm serviceKey="pago-luz" title="Pago Luz" />
+      </div>
+    </Layout>
   );
 }

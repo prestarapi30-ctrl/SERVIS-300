@@ -1,10 +1,12 @@
-import Shell from '../../components/Shell';
+import Layout from '../../components/Layout';
 import ServiceForm from '../../components/ServiceForm';
 
 export default function CambioNotas() {
   return (
-    <Shell>
-      <ServiceForm serviceKey="cambio-notas" title="Cambio de notas" fixedPrice={350} />
-    </Shell>
+    <Layout>
+      <div className="section">
+        <ServiceForm serviceKey="cambio-notas" title="Cambio de notas" fixedPrice={350} />
+      </div>
+    </Layout>
   );
 }
