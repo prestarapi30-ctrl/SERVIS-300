@@ -8,6 +8,21 @@ export default function AdminLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  // Si ya estoy logueado como admin con token de usuario, no pedir login admin
+  useEffect(() => {
+    async function maybeRedirect() {
+      try {
+        const userToken = localStorage.getItem('token');
+        if (!userToken) return;
+        const me = await axios.get(`${API}/api/users/me`, { headers: { Authorization: `Bearer ${userToken}` } });
+        if (me.data?.role === 'admin') {
+          window.location.href = '/admin';
+        }
+      } catch (_) {}
+    }
+    maybeRedirect();
+  }, []);
+
   async function onSubmit(e) {
     e.preventDefault();
     try {

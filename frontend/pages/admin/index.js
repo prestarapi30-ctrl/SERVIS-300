@@ -9,32 +9,48 @@ export default function AdminPanel() {
   const [orders, setOrders] = useState([]);
   const [settings, setSettings] = useState({ global_discount_percent: 30, fixed_price_cambio_notas: 350 });
   const [saving, setSaving] = useState(false);
+  const [adminToken, setAdminToken] = useState(null);
   const totalBalance = users.reduce((sum, u) => sum + Number(u.balance || 0), 0);
   const [metrics, setMetrics] = useState({ recharges_today: 0, pending_orders: 0 });
 
   async function load() {
-    const token = localStorage.getItem('admin_token');
-    if (!token) return (window.location.href = '/admin/login');
-    const u = await axios.get(`${API}/api/admin/users`, { headers: { Authorization: `Bearer ${token}` } });
+    // Elegir token admin: preferir token de usuario con rol admin
+    let tokenToUse = null;
+    try {
+      const userToken = localStorage.getItem('token');
+      if (userToken) {
+        const me = await axios.get(`${API}/api/users/me`, { headers: { Authorization: `Bearer ${userToken}` } });
+        if (me.data?.role === 'admin') {
+          tokenToUse = userToken;
+        }
+      }
+    } catch (_) {}
+    if (!tokenToUse) {
+      const adminLoginToken = localStorage.getItem('admin_token');
+      if (adminLoginToken) tokenToUse = adminLoginToken;
+    }
+    if (!tokenToUse) return (window.location.href = '/admin/login');
+    setAdminToken(tokenToUse);
+    const u = await axios.get(`${API}/api/admin/users`, { headers: { Authorization: `Bearer ${tokenToUse}` } });
     setUsers(u.data);
-    const o = await axios.get(`${API}/api/admin/orders`, { headers: { Authorization: `Bearer ${token}` } });
+    const o = await axios.get(`${API}/api/admin/orders`, { headers: { Authorization: `Bearer ${tokenToUse}` } });
     setOrders(o.data);
-    const s = await axios.get(`${API}/api/admin/settings`, { headers: { Authorization: `Bearer ${token}` } });
+    const s = await axios.get(`${API}/api/admin/settings`, { headers: { Authorization: `Bearer ${tokenToUse}` } });
     setSettings(s.data);
     try {
-      const m = await axios.get(`${API}/api/admin/metrics`, { headers: { Authorization: `Bearer ${token}` } });
+      const m = await axios.get(`${API}/api/admin/metrics`, { headers: { Authorization: `Bearer ${tokenToUse}` } });
       setMetrics(m.data);
     } catch (_) {}
   }
 
   async function updateStatus(id, status) {
-    const token = localStorage.getItem('admin_token');
+    const token = adminToken || localStorage.getItem('admin_token');
     const r = await axios.patch(`${API}/api/admin/orders/${id}/status`, { status }, { headers: { Authorization: `Bearer ${token}` } });
     setOrders(orders.map(x => x.id === id ? r.data : x));
   }
 
   async function recharge(id) {
-    const token = localStorage.getItem('admin_token');
+    const token = adminToken || localStorage.getItem('admin_token');
     const amt = Number(prompt('Monto a recargar:') || 0);
     if (!amt) return;
     await axios.post(`${API}/api/admin/users/${id}/recharge`, { amount: amt }, { headers: { Authorization: `Bearer ${token}` } });
@@ -44,7 +60,7 @@ export default function AdminPanel() {
   useEffect(() => { load(); }, []);
 
   async function saveSettings() {
-    const token = localStorage.getItem('admin_token');
+    const token = adminToken || localStorage.getItem('admin_token');
     setSaving(true);
     try {
       const payload = {
