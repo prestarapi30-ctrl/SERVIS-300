@@ -2,31 +2,23 @@ export default function Layout({ children }) {
   return (
     <div>
       <nav className="nav">
+        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div className="logo">
           <img src="/logo.svg" alt="SERVIS-30" width={28} height={28} />
           <strong style={{ fontSize: 18 }}>SERVIS-30</strong>
-          <span className="pill">Panel de Servicios</span>
+          <span className="pill glow-pulse">Servicios</span>
         </div>
         <div className="cta-group" style={{ alignItems: 'center' }}>
           <a className="link" href="/" style={{ marginRight: 12 }}>Inicio</a>
-          <a className="link" href="/servicios/taxi" style={{ marginRight: 12 }}>Servicios</a>
-          <a className="link" href="/dashboard" style={{ marginRight: 12 }}>Dashboard</a>
-          {!(typeof window !== 'undefined' && localStorage.getItem('token')) && (
-            <a className="link" href="/admin/login" style={{ marginRight: 12 }}>Admin</a>
-          )}
-          {typeof window !== 'undefined' && localStorage.getItem('token') ? (
-            <>
-              <a className="link" href="/perfil" style={{ marginRight: 12 }}>Perfil</a>
-              <a className="btn ghost sm" href="/dashboard#recargar">Recargar saldo</a>
-              <button className="btn secondary sm" onClick={() => {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                window.location.href = '/login';
-              }}>Cerrar sesión</button>
-            </>
-          ) : null}
+          <a className="link" href="/servicios" style={{ marginRight: 12 }}>Servicios</a>
+          <a className="link" href="/referencias" style={{ marginRight: 12 }}>Referencias</a>
+          <a className="pill link" href="https://www.tiktok.com/@servis30p?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer" style={{ marginRight: 12 }}>TikTok</a>
+          <a className="link" href="/login" style={{ marginRight: 12 }}>Login</a>
+          <a className="btn sm" href="/register">Registro</a>
+        </div>
         </div>
       </nav>
+      
       <main className="container">{children}</main>
       <footer className="container" style={{ marginTop: 24 }}>
         <div className="panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>

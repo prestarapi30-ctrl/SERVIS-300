@@ -25,28 +25,22 @@ export default function Shell({ children }) {
   return (
     <div>
       <nav className="nav">
-        <div className="logo">
-          <img src="/logo.svg" alt="SERVIS-30" width={28} height={28} />
-          <strong style={{ fontSize: 18 }}>SERVIS-30</strong>
-          <span className="pill">Panel</span>
-        </div>
-        <div>
-          <a className="link" href="/" style={{ marginRight: 12 }}>Inicio</a>
-          <a className="link" href="/dashboard" style={{ marginRight: 12 }}>Dashboard</a>
-          <a className="link" href="/perfil" style={{ marginRight: 12 }}>Perfil</a>
-          {!(typeof window !== 'undefined' && localStorage.getItem('token')) && (
-            <a className="link" href="/admin" style={{ marginRight: 12 }}>Admin</a>
-          )}
-          <a className="btn" href="/servicios/taxi" style={{ marginRight: 12 }}>Nueva orden</a>
-          {typeof window !== 'undefined' && localStorage.getItem('token') ? (
-            <button className="btn secondary" onClick={() => {
+        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 0 }}>
+          <div className="logo">
+            <img src="/logo.svg" alt="SERVIS-30" width={28} height={28} />
+            <strong style={{ fontSize: 18 }}>SERVIS-30</strong>
+            <span className="pill">Panel</span>
+          </div>
+          <div className="auth-box">
+            <a className="link" href="/dashboard">Dashboard</a>
+            <a className="link" href="/perfil">Perfil</a>
+            <a className="btn ghost sm" href="/dashboard#recargar">Recargar saldo</a>
+            <button className="btn secondary sm" onClick={() => {
               localStorage.removeItem('token');
               localStorage.removeItem('user');
               window.location.href = '/login';
             }}>Cerrar sesión</button>
-          ) : (
-            <a className="btn" href="/login">Entrar</a>
-          )}
+          </div>
         </div>
       </nav>
       <main className="container row">
@@ -61,7 +55,7 @@ export default function Shell({ children }) {
             <div className="title" style={{ fontSize: 18 }}>Contacto</div>
             <div className="muted">Soporte y asistencia del panel disponibles.</div>
           </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="cta-group">
             <a className="pill link" href="https://t.me/Servis30z" target="_blank" rel="noopener noreferrer">Telegram: @Servis30z</a>
             <a className="pill link" href="mailto:contactrecia24@gmail.com">Correo: contactrecia24@gmail.com</a>
           </div>
