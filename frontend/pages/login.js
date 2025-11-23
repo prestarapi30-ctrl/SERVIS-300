@@ -14,7 +14,7 @@ export default function Login() {
       const r = await axios.post(`${API}/api/auth/login`, { email, password });
       localStorage.setItem('token', r.data.token);
       localStorage.setItem('user', JSON.stringify(r.data.user));
-      window.location.href = '/dashboard';
+      window.location.href = '/';
     } catch (e) {
       alert(e.response?.data?.error || e.message);
     }

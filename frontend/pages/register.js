@@ -17,8 +17,15 @@ export default function Register() {
     try {
       setSubmitting(true);
       await axios.post(`${API}/api/auth/register`, { name, email, password, phone });
+      // Login automático tras registro
+      const r = await axios.post(`${API}/api/auth/login`, { email, password });
+      try {
+        localStorage.setItem('token', r.data.token);
+        localStorage.setItem('user', JSON.stringify(r.data.user));
+      } catch (_) {}
       setSuccess(true);
-      setTimeout(() => { window.location.href = '/login'; }, 1400);
+      // Redirigir a Inicio
+      window.location.href = '/';
     } catch (e) {
       alert(e.response?.data?.error || e.message);
     } finally {
