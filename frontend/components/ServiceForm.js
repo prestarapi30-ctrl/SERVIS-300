@@ -75,6 +75,7 @@ const SERVICE_CONFIG = {
 
 export default function ServiceForm({ serviceKey, title, fixedPrice, fields, pricingType, discountPercentOverride }) {
   const baseCfg = SERVICE_CONFIG[serviceKey] || { priceLabel: 'Monto', fields: [] };
+  const priceLabel = baseCfg.priceLabel || 'Monto';
   const cfgFields = Array.isArray(fields) && fields.length ? fields.map(f => ({ name: f.key || f.name, label: f.label, type: f.type })) : (baseCfg.fields || []);
   const [price, setPrice] = useState(fixedPrice || baseCfg.fixed || 0);
   const [form, setForm] = useState(() => Object.fromEntries((cfgFields || []).map(f => [f.name, ''])));
@@ -161,7 +162,7 @@ export default function ServiceForm({ serviceKey, title, fixedPrice, fields, pri
     const isFixed = pricingType === 'fixed' || serviceKey === 'cambio-notas';
     if (!isFixed) {
       const p = Number(price);
-      if (!p || p <= 0) errs.push(`${cfg.priceLabel || 'Monto'} debe ser mayor a 0`);
+      if (!p || p <= 0) errs.push(`${priceLabel} debe ser mayor a 0`);
     }
     return errs;
   }
@@ -259,7 +260,7 @@ export default function ServiceForm({ serviceKey, title, fixedPrice, fields, pri
 
       {(pricingType !== 'fixed' && serviceKey !== 'cambio-notas') && (
         <div style={{ marginBottom: 10 }}>
-          <label className="label">{cfg.priceLabel || 'Monto'}</label>
+          <label className="label">{priceLabel}</label>
           <input className="input" type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} />
         </div>
       )}
