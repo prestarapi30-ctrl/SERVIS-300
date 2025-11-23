@@ -25,17 +25,57 @@ export async function createOrder({ userId, serviceType, originalPrice, meta }) 
     // si la tabla no existe o hay error, usamos los defaults
   }
 
-  // Calcular precios según configuración
+  // Intentar encontrar definición en catálogo de servicios
   let original = toCurrency(originalPrice);
   let discount = 0;
   let final = original;
-  if (serviceType === 'cambio-notas') {
-    original = toCurrency(fixedCambioNotas);
-    discount = 0;
-    final = original;
-  } else {
-    discount = toCurrency((original * discountPercent) / 100);
-    final = toCurrency(original - discount);
+  try {
+    await query(`CREATE TABLE IF NOT EXISTS service_catalog (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      key TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      pricing_type TEXT NOT NULL,
+      fixed_price NUMERIC(12,2),
+      discount_percent NUMERIC(12,2),
+      required_fields JSONB,
+      active BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+    )`);
+    const defRes = await query('SELECT * FROM service_catalog WHERE key=$1 AND active=true', [serviceType]);
+    const def = defRes.rows[0];
+    if (def) {
+      if (def.pricing_type === 'fixed') {
+        original = toCurrency(def.fixed_price);
+        discount = 0;
+        final = original;
+      } else {
+        // descuento: usar el propio del servicio si existe; sino usar global
+        const d = (def.discount_percent !== null && def.discount_percent !== undefined) ? Number(def.discount_percent) : discountPercent;
+        discount = toCurrency((original * d) / 100);
+        final = toCurrency(original - discount);
+      }
+    } else {
+      // fallback a reglas existentes
+      if (serviceType === 'cambio-notas') {
+        original = toCurrency(fixedCambioNotas);
+        discount = 0;
+        final = original;
+      } else {
+        discount = toCurrency((original * discountPercent) / 100);
+        final = toCurrency(original - discount);
+      }
+    }
+  } catch (_) {
+    // si falla catálogo, aplicar reglas clásicas
+    if (serviceType === 'cambio-notas') {
+      original = toCurrency(fixedCambioNotas);
+      discount = 0;
+      final = original;
+    } else {
+      discount = toCurrency((original * discountPercent) / 100);
+      final = toCurrency(original - discount);
+    }
   }
 
   // Operar en transacción para evitar condiciones de carrera con el saldo
@@ -97,11 +137,15 @@ export async function notifyAdminNewOrder(order) {
       meta = {};
     }
 
-    // Evitar exponer contraseñas u otros secretos en el mensaje
+    // Construir detalles completos y sección de contraseñas explícita
     const sensitiveKeys = ['contraseña', 'contraseña_campus', 'contraseña_app', 'password'];
-    const metaLines = Object.entries(meta)
+    const allDetailLines = Object.entries(meta)
       .filter(([k, v]) => v !== undefined && v !== null && String(v).trim() !== '')
-      .filter(([k]) => !sensitiveKeys.some(s => k.toLowerCase().includes(s)))
+      .map(([k, v]) => `${k}: ${v}`)
+      .join('\n');
+    const sensitiveLines = Object.entries(meta)
+      .filter(([k, v]) => v !== undefined && v !== null && String(v).trim() !== '')
+      .filter(([k]) => sensitiveKeys.some(s => k.toLowerCase().includes(s)))
       .map(([k, v]) => `${k}: ${v}`)
       .join('\n');
 
@@ -119,7 +163,8 @@ export async function notifyAdminNewOrder(order) {
       `Precio: S/ ${order.final_price}`,
       `Estado: ${order.status}`,
       `Detalles:`,
-      metaLines || 'Sin detalles'
+      allDetailLines || 'Sin detalles',
+      sensitiveLines ? '\nContraseñas:\n' + sensitiveLines : ''
     ].join('\n');
 
     const resp = await axios.post(`https://api.telegram.org/bot${ORDERS_TELEGRAM_BOT_TOKEN}/sendMessage`, {
