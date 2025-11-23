@@ -31,13 +31,13 @@ export default function ServiciosAdmin() {
       try {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No autenticado');
-        const meUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'}/api/users/me`;
+        const meUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/users/me`;
         const meRes = await fetch(meUrl, { headers: { Authorization: `Bearer ${token}` } });
         if (!meRes.ok) throw new Error('Autenticación inválida');
         const me = await meRes.json();
         if (me.role !== 'admin') throw new Error('No autorizado');
         setAllowed(true);
-        const listUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'}/api/admin/services`;
+        const listUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/admin/services`;
         const lr = await fetch(listUrl, { headers: { Authorization: `Bearer ${token}` } });
         const data = await lr.json();
         setItems(Array.isArray(data) ? data : []);
@@ -71,7 +71,7 @@ export default function ServiciosAdmin() {
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No autenticado');
-      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'}/api/admin/services`;
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/admin/services`;
       const body = {
         key: key.trim(),
         name: name.trim(),
@@ -112,7 +112,7 @@ export default function ServiciosAdmin() {
     setSuccess(null);
     try {
       const token = localStorage.getItem('token');
-      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'}/api/admin/services/${editKey}`;
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/admin/services/${editKey}`;
       const body = {
         name: editName,
         pricing_type: editPricingType,
@@ -135,7 +135,7 @@ export default function ServiciosAdmin() {
     setSuccess(null);
     try {
       const token = localStorage.getItem('token');
-      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'}/api/admin/services/${key}`;
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/admin/services/${key}`;
       const res = await fetch(url, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al borrar');
