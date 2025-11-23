@@ -11,7 +11,8 @@ import { createOrder, creditUserBalanceByToken } from './src/services.js';
 dotenv.config();
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 // Static serving for uploaded references
 app.use('/static', express.static(path.join(process.cwd(), 'public')));
 
