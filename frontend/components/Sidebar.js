@@ -1,4 +1,26 @@
+import { useEffect, useState } from 'react';
+
+const API = process.env.NEXT_PUBLIC_API_URL;
+
 export default function Sidebar() {
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    async function load() {
+      try {
+        const r = await fetch(`${API}/api/services/public`);
+        const data = await r.json();
+        if (!Array.isArray(data)) throw new Error('Catálogo inválido');
+        setServices((data || []).sort((a, b) => String(a.name).localeCompare(String(b.name))));
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
   const Item = ({ href, children }) => (
     <a
       className="item card hoverable"
@@ -25,14 +47,11 @@ export default function Sidebar() {
       <div className="title" style={{ marginBottom: 10 }}>Panel</div>
       <div className="muted" style={{ margin: '6px 0 8px' }}>Servicios</div>
       <div style={{ display: 'grid', gap: 8 }}>
-        {/* Orden alfabético */}
-        <Item href="/servicios/cambio-notas">Cambio de notas</Item>
-        <Item href="/servicios/pago-internet">Pago de internet</Item>
-        <Item href="/servicios/pago-luz">Pago de luz</Item>
-        <Item href="/servicios/pago-movil">Pago de móvil</Item>
-        <Item href="/servicios/pago-universidad">Pago de universidad</Item>
-        <Item href="/servicios/taxi">Taxi</Item>
-        <Item href="/servicios/vuelos-bus">Vuelos y bus</Item>
+        {loading && <div className="muted">Cargando servicios...</div>}
+        {error && <div className="error">{error}</div>}
+        {!loading && !error && services.map(s => (
+          <Item key={s.key} href={`/servicios/${s.key}`}>{s.name}</Item>
+        ))}
       </div>
       <div className="muted" style={{ margin: '12px 0 8px' }}>Administración</div>
       <div style={{ display: 'grid', gap: 8 }}>

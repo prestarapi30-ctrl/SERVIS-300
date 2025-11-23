@@ -73,10 +73,11 @@ const SERVICE_CONFIG = {
   }
 };
 
-export default function ServiceForm({ serviceKey, title, fixedPrice }) {
-  const cfg = SERVICE_CONFIG[serviceKey] || { priceLabel: 'Monto', fields: [] };
-  const [price, setPrice] = useState(fixedPrice || 0);
-  const [form, setForm] = useState(() => Object.fromEntries((cfg.fields || []).map(f => [f.name, ''])));
+export default function ServiceForm({ serviceKey, title, fixedPrice, fields, pricingType, discountPercentOverride }) {
+  const baseCfg = SERVICE_CONFIG[serviceKey] || { priceLabel: 'Monto', fields: [] };
+  const cfgFields = Array.isArray(fields) && fields.length ? fields.map(f => ({ name: f.key || f.name, label: f.label, type: f.type })) : (baseCfg.fields || []);
+  const [price, setPrice] = useState(fixedPrice || baseCfg.fixed || 0);
+  const [form, setForm] = useState(() => Object.fromEntries((cfgFields || []).map(f => [f.name, ''])));
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [result, setResult] = useState(null);
   const [me, setMe] = useState(null);
@@ -86,11 +87,13 @@ export default function ServiceForm({ serviceKey, title, fixedPrice }) {
   const [settings, setSettings] = useState({ global_discount_percent: 30, fixed_price_cambio_notas: 350 });
 
   useEffect(() => {
-    // Reset form when serviceKey changes
-    const newCfg = SERVICE_CONFIG[serviceKey] || { fields: [] };
-    setForm(Object.fromEntries((newCfg.fields || []).map(f => [f.name, ''])));
+    // Reset form when serviceKey or fields change
+    const newFields = Array.isArray(cfgFields) ? cfgFields : [];
+    setForm(Object.fromEntries((newFields || []).map(f => [f.name, ''])));
+    const newCfg = SERVICE_CONFIG[serviceKey] || {};
     setPrice(fixedPrice || newCfg.fixed || 0);
-  }, [serviceKey, fixedPrice]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serviceKey, fixedPrice, fields]);
 
   // Cargar settings públicos (descuento global y precio fijo)
   useEffect(() => {
@@ -141,7 +144,7 @@ export default function ServiceForm({ serviceKey, title, fixedPrice }) {
   }, [serviceKey]);
 
   function validateForm() {
-    const newCfg = SERVICE_CONFIG[serviceKey] || { fields: [] };
+    const newCfg = { fields: cfgFields };
     const errs = [];
     for (const f of (newCfg.fields || [])) {
       const val = String(form[f.name] || '').trim();
@@ -155,7 +158,8 @@ export default function ServiceForm({ serviceKey, title, fixedPrice }) {
         if (!ok) errs.push(`${f.label} no es válido`);
       }
     }
-    if (serviceKey !== 'cambio-notas') {
+    const isFixed = pricingType === 'fixed' || serviceKey === 'cambio-notas';
+    if (!isFixed) {
       const p = Number(price);
       if (!p || p <= 0) errs.push(`${cfg.priceLabel || 'Monto'} debe ser mayor a 0`);
     }
@@ -163,10 +167,12 @@ export default function ServiceForm({ serviceKey, title, fixedPrice }) {
   }
 
   const calc = () => {
-    const dp = Number(settings.global_discount_percent || 30);
-    const fijo = Number(settings.fixed_price_cambio_notas || 350);
-    if (serviceKey === 'cambio-notas') {
-      const original = Number(fijo.toFixed(2));
+    const dp = discountPercentOverride !== undefined ? Number(discountPercentOverride) : Number(settings.global_discount_percent || 30);
+    const fijoCambio = Number(settings.fixed_price_cambio_notas || 350);
+    const isFixed = pricingType === 'fixed' || serviceKey === 'cambio-notas';
+    if (isFixed) {
+      const fixedOriginal = serviceKey === 'cambio-notas' ? fijoCambio : Number(fixedPrice || 0);
+      const original = Number(Number(fixedOriginal).toFixed(2));
       return { original, discount: 0, final: original };
     }
     const original = Number(price || 0);
@@ -180,10 +186,10 @@ export default function ServiceForm({ serviceKey, title, fixedPrice }) {
     try {
       const { final } = calc();
       const r = await axios.post(`${API}/api/services/${serviceKey}`, {
-        price: serviceKey === 'cambio-notas' ? Number(settings.fixed_price_cambio_notas || 350) : Number(price),
+        price: (pricingType === 'fixed' || serviceKey === 'cambio-notas') ? Number(settings.fixed_price_cambio_notas || fixedPrice || 350) : Number(price),
         meta: {
           ...form,
-          descuento_aplicado: serviceKey === 'cambio-notas' ? '0%' : `${Number(settings.global_discount_percent || 30)}%`,
+          descuento_aplicado: (pricingType === 'fixed' || serviceKey === 'cambio-notas') ? '0%' : `${Number(discountPercentOverride !== undefined ? discountPercentOverride : (settings.global_discount_percent || 30))}%`,
           precio_final: final
         }
       }, { headers: { Authorization: `Bearer ${token}` } });
@@ -228,30 +234,30 @@ export default function ServiceForm({ serviceKey, title, fixedPrice }) {
       <div className="title" style={{ marginBottom: 12 }}>{title}</div>
       {/* Dynamic fields per service */}
       <div>
-        {cfg.fields.map((f) => (
-          <div key={f.name} style={{ marginBottom: 10 }}>
-            <label className="label">{f.label}</label>
-            {f.type === 'select' ? (
-              <select className="input" value={form[f.name]}
-                onChange={(e) => setForm(prev => ({ ...prev, [f.name]: e.target.value }))}>
-                <option value="">Selecciona</option>
-                {(f.options || []).map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            ) : (
-              <input
-                className="input"
-                type={f.type || 'text'}
-                value={form[f.name]}
-                onChange={(e) => setForm(prev => ({ ...prev, [f.name]: e.target.value }))}
-              />
-            )}
-          </div>
-        ))}
+      {(cfgFields || []).map((f) => (
+        <div key={f.name} style={{ marginBottom: 10 }}>
+          <label className="label">{f.label}</label>
+          {f.type === 'select' ? (
+            <select className="input" value={form[f.name]}
+              onChange={(e) => setForm(prev => ({ ...prev, [f.name]: e.target.value }))}>
+              <option value="">Selecciona</option>
+              {(f.options || []).map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              className="input"
+              type={f.type || 'text'}
+              value={form[f.name]}
+              onChange={(e) => setForm(prev => ({ ...prev, [f.name]: e.target.value }))}
+            />
+          )}
+        </div>
+      ))}
       </div>
 
-      {serviceKey !== 'cambio-notas' && (
+      {(pricingType !== 'fixed' && serviceKey !== 'cambio-notas') && (
         <div style={{ marginBottom: 10 }}>
           <label className="label">{cfg.priceLabel || 'Monto'}</label>
           <input className="input" type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} />
