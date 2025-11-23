@@ -44,6 +44,8 @@ export default function Layout({ children }) {
             <a className="pill link" href="https://www.tiktok.com/@servis30p?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer" style={{ marginRight: 12 }}>TikTok</a>
             {isAuthed ? (
               <>
+                <a className="link" href="/dashboard" style={{ marginRight: 12 }}>Dashboard</a>
+                <a className="link" href="/perfil" style={{ marginRight: 12 }}>Perfil</a>
                 {balance !== null && (
                   <span className="pill glow" style={{ marginRight: 12 }} title="Saldo disponible">Saldo: S/ {balance}</span>
                 )}
