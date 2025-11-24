@@ -60,7 +60,7 @@ export default function Sidebar() {
     <a
       className="item card hoverable"
       href={href}
-      style={{ padding: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+      style={{ padding: 8 }}
     >
       {children}
     </a>
@@ -78,7 +78,7 @@ export default function Sidebar() {
     }
   };
   return (
-    <aside className="panel sidebar" style={{ minWidth: 240 }}>
+    <aside className="panel sidebar">
       <div className="title" style={{ marginBottom: 10 }}>Panel</div>
       <div className="muted" style={{ margin: '6px 0 8px' }}>Servicios</div>
       <div style={{ display: 'grid', gap: 8 }}>
