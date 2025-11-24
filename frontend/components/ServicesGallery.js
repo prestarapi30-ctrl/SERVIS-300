@@ -56,7 +56,7 @@ export default function ServicesGallery() {
       {error && <div className="error">{error}</div>}
       <div className="grid">
         {items.map(s => (
-          <a key={s.key} href={`/servicios/${s.key}`} className="card hoverable" style={{ textDecoration: 'none', color: 'inherit', display: 'grid', gridTemplateColumns: '28px 1fr', gap: 10 }}>
+          <a key={s.key} href={`/servicios/${s.key}`} className="card hoverable service-item">
             <div style={{ opacity: 0.9 }}>
               {/* Ícono minimal */}
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2 7a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3Zm3-1a1 1 0 0 0-1 1v2h16V7a1 1 0 0 0-1-1Zm-1 6h6v2H4Zm10 0h6v2h-6Z"/></svg>
